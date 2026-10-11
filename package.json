@@ -1,0 +1,13 @@
+{
+  "name": "feed-gate",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:e2e": "playwright test",
+    "check": "for f in extension/*.js; do node --check \"$f\" || exit 1; done"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0"
+  }
+}
