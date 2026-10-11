@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 const EXTENSION_DIR = fileURLToPath(new URL('../extension', import.meta.url));
 
 export const test = base.extend({
-  // Playwright 默认带 --disable-back-forward-cache。要验证 bfcache 恢复路径的用例
-  // 用 test.use({ bfcache: true }) 打开，其余用例保持默认，避免 goBack 等不到 load
+  // Playwright 默认带 --disable-back-forward-cache；test.use({ bfcache: true }) 恢复成
+  // 真实 Chrome 的设置。其余用例保持关闭：开着时 goBack 落到缓存页不触发 load，默认会一直等
   bfcache: [false, { option: true }],
   context: async ({ bfcache }, use) => {
     // channel: 'chromium' 用新版 headless，支持加载扩展

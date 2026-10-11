@@ -30,34 +30,37 @@ for (const { id, from, to } of SPA) {
   });
 }
 
-for (const bfcache of [true, false]) {
-  test.describe(() => {
-    // 真实 Chrome 开着 bfcache，但缓存可能被驱逐，两种情况都要验证后退不被困在闸门
-    test.use({ bfcache });
+test.describe(() => {
+  // 按真实 Chrome 的设置开着 bfcache。闸门用 location.replace 替换了首页那条历史记录，
+  // 首页文档被丢弃，后退不会从 bfcache 恢复首页；这条用例验证的是历史记录被替换
+  test.use({ bfcache: true });
 
-    test(`被拦后按一次后退回到进首页之前的页面（bfcache ${bfcache ? '开' : '关'}）`, async ({ context, page }) => {
-      await serveStub(context, 'https://x.com/notifications');
-      await page.goto('https://x.com/notifications');
-      await page.evaluate(() => history.pushState({}, '', '/home'));
-      await expect(page).toHaveURL(gateUrl('x'));
-      // bfcache 恢复不触发 load，只等 commit；之后的 URL 由断言等待
-      await page.goBack({ waitUntil: 'commit' });
-      await expect(page).toHaveURL('https://x.com/notifications');
-      await page.goForward({ waitUntil: 'commit' });
-      await expect(page).toHaveURL(gateUrl('x'));
-    });
+  test('站内跳首页被拦后，后退回到进首页之前的页面，前进回到闸门', async ({ context, page }) => {
+    await serveStub(context, 'https://x.com/notifications');
+    await page.goto('https://x.com/notifications');
+    await page.evaluate(() => history.pushState({}, '', '/home'));
+    await expect(page).toHaveURL(gateUrl('x'));
+    // 开着 bfcache 时目标页可能从缓存恢复、不触发 load，所以只等 commit，URL 由断言等待
+    await page.goBack({ waitUntil: 'commit' });
+    await expect(page).toHaveURL('https://x.com/notifications');
+    await page.goForward({ waitUntil: 'commit' });
+    await expect(page).toHaveURL(gateUrl('x'));
   });
-}
+});
 
-// 首页历史记录被替换掉后，后退不再经过首页，onCommitted 需要单独验证：
-// 去掉 DNR 规则，让整页加载的首页真正提交，只能靠 onCommitted 拦
-test('DNR 规则缺失时，整页加载的首页由 onCommitted 兜底拦下', async ({ context, page }) => {
+// 去掉 DNR 规则，模拟 DNR 看不到的整页加载（如网站 service worker 应答的导航）：
+// 首页真正提交，只能靠 onCommitted 拦，而且也要替换历史记录，后退不能被困
+test('DNR 看不到的整页加载由 onCommitted 拦下，后退回到进首页之前的页面', async ({ context, page }) => {
   const [worker] = context.serviceWorkers();
   await worker.evaluate(() => chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [1, 2, 3, 4] }));
   expect(await worker.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).length)).toBe(0);
+  await serveStub(context, 'https://example.com/');
   await serveStub(context, 'https://www.bilibili.com/');
+  await page.goto('https://example.com/');
   await page.goto('https://www.bilibili.com/');
   await expect(page).toHaveURL(gateUrl('bilibili'));
+  await page.goBack({ waitUntil: 'commit' });
+  await expect(page).toHaveURL('https://example.com/');
 });
 
 test('从其他网站点链接进首页也被拦', async ({ context, page }) => {

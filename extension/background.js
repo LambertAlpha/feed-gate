@@ -13,8 +13,8 @@ async function installRules() {
 chrome.runtime.onInstalled.addListener(installRules);
 chrome.runtime.onStartup.addListener(installRules);
 
-// DNR 只拦得到真正发出的请求。SPA 站内跳转（pushState）和后退恢复缓存页（bfcache）
-// 不发请求，靠这里兜底
+// DNR 看不到的首页导航都靠这两个监听拦：SPA pushState、bfcache 恢复、
+// 网站自己的 service worker 应答的导航（如 X 的 PWA）、DNR 规则缺失
 function gateIfHomepage({ tabId, frameId, url }) {
   if (frameId !== 0) return;
   const site = matchHomepage(url);
@@ -29,7 +29,10 @@ function gateIfHomepage({ tabId, frameId, url }) {
       args: [gateUrl],
       injectImmediately: true,
     })
-    .catch(() => chrome.tabs.update(tabId, { url: gateUrl }));
+    .catch((error) => {
+      console.warn('feed-gate: executeScript failed, falling back to tabs.update', error);
+      return chrome.tabs.update(tabId, { url: gateUrl }).catch(() => {});
+    });
 }
 
 const filter = { url: SITES.flatMap((site) => site.hosts.map((host) => ({ hostEquals: host }))) };
