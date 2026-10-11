@@ -1,5 +1,6 @@
 import { test as base, expect, chromium } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
+import { SITES } from '../extension/sites.js';
 
 const EXTENSION_DIR = fileURLToPath(new URL('../extension', import.meta.url));
 
@@ -29,7 +30,7 @@ export const test = base.extend({
       const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
       await expect
         .poll(() => worker.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).length))
-        .toBe(4);
+        .toBe(SITES.length);
       await use(new URL(worker.url()).host);
     },
     { auto: true },

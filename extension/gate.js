@@ -7,12 +7,14 @@ const inputEl = document.getElementById('q');
 const linksEl = document.getElementById('links');
 const statsEl = document.getElementById('stats');
 
-const site = SITES_BY_ID[new URLSearchParams(location.search).get('site')] ?? null;
+// hasOwn：constructor、__proto__ 这类原型链上的名字不能当成站点
+const siteId = new URLSearchParams(location.search).get('site');
+const site = Object.hasOwn(SITES_BY_ID, siteId) ? SITES_BY_ID[siteId] : null;
 
 if (site) {
   showGate(site);
   // 统计失败不影响拦截，只是不显示次数
-  recordVisit(site).catch(() => {});
+  showStats(site).catch(() => {});
 } else {
   titleEl.textContent = '你来这里干什么？';
   formEl.hidden = true;
@@ -38,9 +40,22 @@ function showGate(site) {
   inputEl.focus();
 }
 
-async function recordVisit(site) {
+// 刷新、前进后退回到闸门不是新的一次「打开首页」，只显示当前计数，不写入
+function isRevisit() {
+  const type = performance.getEntriesByType('navigation')[0]?.type;
+  return type === 'reload' || type === 'back_forward';
+}
+
+async function showStats(site) {
   const { stats } = await chrome.storage.local.get('stats');
-  const next = bumpStats(stats, site.id, todayKey(new Date()));
-  await chrome.storage.local.set({ stats: next });
-  statsEl.textContent = `今天第 ${next.counts[site.id]} 次打开${site.name}首页 · 四站合计 ${totalCount(next)} 次`;
+  const today = todayKey(new Date());
+  let current = stats;
+  if (!isRevisit()) {
+    current = bumpStats(stats, site.id, today);
+    await chrome.storage.local.set({ stats: current });
+  }
+  // 只显示今天确有记录的次数；没有（如隔天刷新昨天的闸门）就留空，不编造
+  const count = current?.date === today ? current.counts[site.id] : undefined;
+  if (!count) return;
+  statsEl.textContent = `今天第 ${count} 次打开${site.name}首页 · 各站合计 ${totalCount(current)} 次`;
 }

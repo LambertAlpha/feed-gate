@@ -6,7 +6,7 @@ export const SITES = [
     id: 'x',
     name: '推特',
     hosts: ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'],
-    homepage: String.raw`^https://(www\.)?(x|twitter)\.com/(home)?([?#].*)?$`,
+    homepage: String.raw`^https://(www\.)?(x|twitter)\.com/(home/?)?([?#].*)?$`,
     searchPrefix: 'https://x.com/search?q=',
     links: [
       { label: '通知', url: 'https://x.com/notifications' },

@@ -7,6 +7,7 @@ const HOMEPAGES = {
   x: [
     'https://x.com/',
     'https://x.com/home',
+    'https://x.com/home/',
     'https://x.com/home?lang=zh',
     'https://www.x.com/',
     'https://twitter.com/home',

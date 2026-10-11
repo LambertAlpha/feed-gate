@@ -1,4 +1,5 @@
 import { test, expect, gateUrl, serveStub } from './fixtures.js';
+import { SITES } from '../extension/sites.js';
 
 const HOMES = [
   { id: 'x', url: 'https://x.com/home' },
@@ -52,7 +53,9 @@ test.describe(() => {
 // 首页真正提交，只能靠 onCommitted 拦，而且也要替换历史记录，后退不能被困
 test('DNR 看不到的整页加载由 onCommitted 拦下，后退回到进首页之前的页面', async ({ context, page }) => {
   const [worker] = context.serviceWorkers();
-  await worker.evaluate(() => chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [1, 2, 3, 4] }));
+  // 规则 id 按站点顺序从 1 开始（见 rules.js）；删漏了的话下面的 length 断言会失败
+  const ruleIds = SITES.map((_, i) => i + 1);
+  await worker.evaluate((removeRuleIds) => chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds }), ruleIds);
   expect(await worker.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).length)).toBe(0);
   await serveStub(context, 'https://example.com/');
   await serveStub(context, 'https://www.bilibili.com/');
