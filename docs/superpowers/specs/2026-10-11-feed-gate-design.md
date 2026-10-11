@@ -67,18 +67,21 @@
 
 ```
 feed-gate/
-├── manifest.json     MV3；权限 declarativeNetRequest、webNavigation、storage；只申请四站 host 权限
-├── src/
-│   ├── sites.js      唯一配置源：id、站名、首页正则、搜索 URL 构造、快捷入口
-│   ├── background.js 生成 DNR 规则 + 监听站内跳转兜底
+├── extension/          ← Chrome「加载已解压的扩展程序」选这个目录
+│   ├── manifest.json   MV3；权限 declarativeNetRequest、webNavigation、storage；只申请四站 host 权限
+│   ├── sites.js        唯一配置源：id、站名、域名、首页正则、搜索前缀、快捷入口
+│   ├── rules.js        由 sites.js 生成 DNR 规则（纯函数）
+│   ├── stats.js        每日计数（纯函数）
+│   ├── background.js   安装规则 + 监听站内跳转兜底
 │   ├── gate.html
 │   ├── gate.js
 │   └── gate.css
-├── test/             node --test 单元测试 + Playwright 端到端
-└── package.json      仅用于 "type": "module" 和测试脚本
+├── test/               node --test 单元测试
+├── e2e/                Playwright 端到端
+└── package.json        "type": "module" 和测试脚本（不进扩展目录）
 ```
 
-无构建步骤，原生 ES Module：service worker 用 `"type": "module"`，`gate.js` 也是 module，二者和测试都直接 import `sites.js`。
+扩展代码单独放在 `extension/`，避免把 `node_modules` 一起加载进 Chrome。无构建步骤，原生 ES Module：service worker 用 `"type": "module"`，`gate.js` 也是 module，它们和测试都直接 import `sites.js`。
 
 ### 三层拦截
 
@@ -90,17 +93,17 @@ feed-gate/
 | 站内点 Logo /「发现」（SPA `pushState`，不发请求） | `webNavigation.onHistoryStateUpdated` → `chrome.tabs.update` 跳闸门 | 推荐流可能闪现零点几秒 |
 | 后退恢复缓存页（bfcache，不发请求） | `webNavigation.onCommitted` → 同上 | 同上 |
 
-两个 webNavigation 监听只处理 `frameId === 0`（主框架）。
+两个 webNavigation 监听只处理 `frameId === 0`（主框架），并用 `hostEquals` 过滤器限定在四站域名，避免其他网站的每次跳转都唤醒 service worker。
 
 ### 单一配置源
 
-每个站的首页正则只在 `sites.js` 写一份，同时供给 DNR 的 `regexFilter`（RE2 语法）和 JS 的 `RegExp`。因此正则只能用两者共同支持的子集：不用前瞻/后顾、不用反向引用、仅 ASCII。单元测试会用 JS `RegExp` 跑同一个字符串，保证两边行为一致。
+每个站的首页正则只在 `sites.js` 写一份，同时供给 DNR 的 `regexFilter`（RE2 语法）和 JS 的 `RegExp`。因此正则只能用两者共同支持的子集：不用前瞻/后顾、不用反向引用、仅 ASCII。DNR 规则设 `isUrlFilterCaseSensitive: true`，和 JS `RegExp` 的大小写行为一致。单元测试会用 JS `RegExp` 跑同一个字符串，端到端测试验证 DNR 实际接受这些正则。
 
 DNR 规则在 `runtime.onInstalled` 和 `runtime.onStartup` 时重建：先删除本扩展全部动态规则，再按 `sites.js` 生成。每站一条规则，rule id 按站点顺序从 1 开始。动态规则会跨浏览器重启和扩展升级保留，重建是幂等的。
 
 ### Manifest 约束（来自 Chrome 文档）
 
-- DNR 重定向到扩展内页面时，目标必须在 `web_accessible_resources` 中声明，`matches` 为四站域名
+- DNR 重定向到扩展内页面时，目标必须在 `web_accessible_resources` 中声明。`matches` 用 `<all_urls>` 而不是四站域名：从 Google 搜索结果等其他网站点链接进首页时，请求的发起方是那个网站，只写四站会导致重定向被拒（`ERR_BLOCKED_BY_CLIENT`）
 - 重定向规则需要对应站点的 host 权限，因此 `host_permissions` 列出四站（含裸域）
 - `chrome.tabs.update` 跳转扩展页不需要 `tabs` 权限
 
@@ -122,8 +125,11 @@ DNR 规则在 `runtime.onInstalled` 和 `runtime.onStartup` 时重建：先删�
 ## 测试
 
 1. **单元测试**（`node --test`，零依赖）：URL 表驱动，覆盖每站的正例和反例，重点是上面的「关键边界」；另测搜索 URL 编码（中文、空格、`&`）和日期翻转后计数清零的纯函数
-2. **端到端**（Playwright 自带的 Chromium，`--load-extension` 加载）：
-   - 四站各一次：打开首页 URL → 落到 `gate.html` → 输入关键词回车 → URL 变为搜索页。DNR 在请求发出前生效，这一步不依赖网络和登录
-   - SPA 兜底：先打开某站非首页页面，`page.evaluate(() => history.pushState({}, '', '/'))`（小红书用 `/explore`），断言跳到闸门。这一步要真实加载站点页面，依赖网络
-   - 反例：打开小红书 `/explore/<任意ID>`，断言**没有**跳到闸门（同样依赖网络）
+2. **端到端**（Playwright 自带的 Chromium，`--load-extension` 加载）。非首页的站点页面和搜索结果页都用 `context.route` 返回本地桩页面，整套测试不依赖网络和登录：
+   - 四站各一次：打开首页 URL → 落到 `gate.html` → 输入关键词回车 → URL 变为搜索页 → 按后退不回闸门
+   - SPA 兜底：先打开某站非首页页面，`page.evaluate(() => history.pushState({}, '', '/'))`（推特用 `/home`，小红书用 `/explore`），断言跳到闸门
+   - 后退：被拦后按后退回到首页记录，断言仍是闸门
+   - 跨站点击：从 `example.com` 点链接进 B站首页，断言跳到闸门（验证 `<all_urls>` 的必要性）
+   - 反例：小红书 `/explore/<笔记ID>`、B站视频页、推特搜索页，断言**没有**跳到闸门
+   - 闸门页：空输入不跳转、计数文案、未知 `site` 参数、快捷入口
 3. **手动**（用户在自己已登录的 Chrome 里）：加载解包扩展，点一遍每站快捷入口，确认能到对应页面
