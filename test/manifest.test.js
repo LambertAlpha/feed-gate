@@ -17,7 +17,7 @@ test('MV3，background 是 module service worker', () => {
 });
 
 test('只申请需要的权限', () => {
-  assert.deepEqual([...manifest.permissions].sort(), ['declarativeNetRequest', 'storage', 'webNavigation']);
+  assert.deepEqual([...manifest.permissions].sort(), ['declarativeNetRequest', 'scripting', 'storage', 'webNavigation']);
 });
 
 test('host_permissions 覆盖所有站点域名（DNR 重定向需要）', () => {

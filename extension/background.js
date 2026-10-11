@@ -18,7 +18,18 @@ chrome.runtime.onStartup.addListener(installRules);
 function gateIfHomepage({ tabId, frameId, url }) {
   if (frameId !== 0) return;
   const site = matchHomepage(url);
-  if (site) chrome.tabs.update(tabId, { url: chrome.runtime.getURL(gatePath(site.id)) });
+  if (!site) return;
+  const gateUrl = chrome.runtime.getURL(gatePath(site.id));
+  // 用 location.replace 替换掉首页这条历史记录（和 DNR 重定向一致），
+  // tabs.update 会新增一条，后退回到首页又被拦，用户就被困住了
+  chrome.scripting
+    .executeScript({
+      target: { tabId, frameIds: [0] },
+      func: (url) => location.replace(url),
+      args: [gateUrl],
+      injectImmediately: true,
+    })
+    .catch(() => chrome.tabs.update(tabId, { url: gateUrl }));
 }
 
 const filter = { url: SITES.flatMap((site) => site.hosts.map((host) => ({ hostEquals: host }))) };
