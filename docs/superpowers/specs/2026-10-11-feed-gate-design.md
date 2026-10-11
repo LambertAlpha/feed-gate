@@ -89,11 +89,13 @@ feed-gate/
 
 | 进入方式 | 手段 | 效果 |
 |---|---|---|
-| 地址栏输入、外链、刷新（整页加载） | `declarativeNetRequest` 动态规则，`main_frame` 请求重定向到 `gate.html?site={id}` | 请求发出前就被改走，首页零加载、不闪 |
+| 地址栏输入、外链、刷新（整页加载） | `declarativeNetRequest` 动态规则，`main_frame` 请求重定向到 `gate.html?site={id}` | 请求发出前就被改走，首页零加载、不闪（站点 Service Worker 接管的导航除外，见第三行） |
 | 站内点 Logo /「发现」（SPA `pushState`，不发请求） | `webNavigation.onHistoryStateUpdated` → `scripting.executeScript` 在页面里执行 `location.replace(闸门)` | 推荐流可能闪现零点几秒 |
-| DNR 规则缺失时的整页加载、bfcache 恢复出的首页 | `webNavigation.onCommitted` → 同上 | 同上 |
+| DNR 看不到的整页导航：站点自己的 Service Worker 直接应答（推特是 PWA）、DNR 规则缺失；bfcache 恢复出的首页 | `webNavigation.onCommitted` → 同上 | 首页先提交再被替换，会闪一下 |
 
 两个 webNavigation 监听只处理 `frameId === 0`（主框架），并用 `hostEquals` 过滤器限定在四站域名，避免其他网站的每次跳转都唤醒 service worker。`executeScript` 失败时退回 `chrome.tabs.update`。
+
+**第三层不是可有可无的兜底**：站点 Service Worker 应答的导航不经过网络层，DNR 完全看不到。代码审查时用模拟的 x.com Service Worker 验证过：地址栏输入、站内链接、跨站链接、脚本跳转四种方式进 `/home`，全部由 `onCommitted` 拦下。推特在真实 Chrome 里是否走这条路径，见手动检查清单。
 
 **为什么必须替换**：最初设计用 `chrome.tabs.update` 跳闸门，会新压一条历史记录，首页那条还留着。实测在真实 Chrome（默认开 bfcache）里，按后退时首页从缓存恢复，被 `onCommitted` 再拦一次，又压一条闸门，后退按钮被永久困住。改成 `location.replace` 后，历史里首页那条被闸门替换，按一次后退就回到进首页之前的页面，前进回到闸门。
 
@@ -131,10 +133,11 @@ DNR 规则在 `runtime.onInstalled` 和 `runtime.onStartup` 时重建：先删�
 2. **端到端**（Playwright 自带的 Chromium，`--load-extension` 加载）。非首页的站点页面和搜索结果页都用 `context.route` 返回本地桩页面；浏览器用 `--host-resolver-rules` 强制离线，否则 DNR 失效时真实首页加载后会被 `onCommitted` 兜底拦下，测试照过、掩盖问题：
    - 四站各一次：打开首页 URL → 落到 `gate.html` → 输入关键词回车 → URL 变为搜索页 → 按后退不回闸门
    - SPA 兜底：先打开某站非首页页面，`page.evaluate(() => history.pushState({}, '', '/'))`（推特用 `/home`，小红书用 `/explore`），断言跳到闸门
-   - 后退：被拦后按一次后退回到进首页之前的页面，前进回到闸门；bfcache 开、关各跑一次（Playwright 默认关 bfcache，真实 Chrome 默认开）
-   - `onCommitted` 兜底：删掉全部 DNR 规则后打开首页，断言仍跳到闸门
+   - 后退（SPA 路径）：被拦后按一次后退回到进首页之前的页面，前进回到闸门；开启 bfcache，和真实 Chrome 一致（Playwright 默认关）
+   - `onCommitted` 路径：删掉全部 DNR 规则后打开首页，断言跳到闸门，再按后退回到上一个页面
+   - 不在 E2E 覆盖内：真正的 bfcache 恢复。`location.replace` 会丢弃首页文档，正常使用中没有可恢复的首页；审查时用临时测试钩子做过一次实验，恢复后 `onCommitted` 触发、页面被替换、再按后退可以离开
    - 变异检查：去掉三层中任意一层，都至少有一个用例失败
    - 跨站点击：从 `example.com` 点链接进 B站首页，断言跳到闸门（验证 `<all_urls>` 的必要性）
    - 反例：小红书 `/explore/<笔记ID>`、B站视频页、推特搜索页，断言**没有**跳到闸门
    - 闸门页：空输入不跳转、计数文案、未知 `site` 参数、快捷入口
-3. **手动**（用户在自己已登录的 Chrome 里）：加载解包扩展，点一遍每站快捷入口，确认能到对应页面
+3. **手动**（用户在自己已登录的 Chrome 里）：加载解包扩展，点一遍每站快捷入口，确认能到对应页面；访问过一次 x.com 后再在地址栏输入 `x.com`，看推荐流是否闪现、DevTools Network 里文档请求是否标着 `(ServiceWorker)`
