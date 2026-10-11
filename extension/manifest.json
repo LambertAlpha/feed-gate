@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Feed Gate",
+  "version": "0.1.0",
+  "description": "打开推特、B站、知乎、小红书首页时，先问你来干什么。",
+  "permissions": ["declarativeNetRequest", "webNavigation", "storage"],
+  "host_permissions": [
+    "https://*.x.com/*",
+    "https://*.twitter.com/*",
+    "https://*.bilibili.com/*",
+    "https://*.zhihu.com/*",
+    "https://*.xiaohongshu.com/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "web_accessible_resources": [
+    { "resources": ["gate.html"], "matches": ["<all_urls>"] }
+  ]
+}
