@@ -1,4 +1,20 @@
 <!doctype html>
-<meta charset="utf-8">
-<title>你来干什么？</title>
-<h1>你来干什么？</h1>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>你来干什么？</title>
+  <link rel="stylesheet" href="gate.css">
+  <script type="module" src="gate.js"></script>
+</head>
+<body>
+  <main>
+    <h1 id="title">你来干什么？</h1>
+    <form id="search" role="search" autocomplete="off">
+      <input id="q" type="search" aria-labelledby="title" autofocus>
+    </form>
+    <nav id="links" aria-label="快捷入口"></nav>
+  </main>
+  <p id="stats" aria-live="polite"></p>
+</body>
+</html>
