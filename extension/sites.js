@@ -10,7 +10,7 @@ export const SITES = [
     searchPrefix: 'https://x.com/search?q=',
     links: [
       { label: '通知', url: 'https://x.com/notifications' },
-      { label: '私信', url: 'https://x.com/messages' },
+      { label: '私信', url: 'https://x.com/i/chat' },
       { label: '书签', url: 'https://x.com/i/bookmarks' },
     ],
   },
@@ -22,7 +22,7 @@ export const SITES = [
     searchPrefix: 'https://search.bilibili.com/all?keyword=',
     links: [
       { label: '消息', url: 'https://message.bilibili.com/' },
-      { label: '稍后再看', url: 'https://www.bilibili.com/watchlater/#/list' },
+      { label: '稍后再看', url: 'https://www.bilibili.com/watchlater/list' },
       { label: '历史记录', url: 'https://www.bilibili.com/history' },
     ],
   },
