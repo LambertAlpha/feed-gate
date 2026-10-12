@@ -48,6 +48,18 @@ export const SITES = [
       { label: 'Notifications', url: 'https://www.xiaohongshu.com/notification' },
     ],
   },
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    hosts: ['www.instagram.com', 'instagram.com'],
+    // 只拦根路径（含 ?variant=following）；/explore/、/reels/ 与其他站的热门页一样不在范围内
+    homepage: String.raw`^https://(www\.)?instagram\.com/([?#].*)?$`,
+    searchPrefix: 'https://www.instagram.com/explore/search/keyword/?q=',
+    links: [
+      { label: 'Messages', url: 'https://www.instagram.com/direct/inbox/' },
+      { label: 'Notifications', url: 'https://www.instagram.com/notifications/' },
+    ],
+  },
 ];
 
 export const SITES_BY_ID = Object.fromEntries(SITES.map((site) => [site.id, site]));

@@ -28,6 +28,11 @@ const HOMEPAGES = {
     'https://www.xiaohongshu.com/explore/',
     'https://www.xiaohongshu.com/explore?channel_id=homefeed.fashion_v3',
   ],
+  instagram: [
+    'https://www.instagram.com/',
+    'https://instagram.com/',
+    'https://www.instagram.com/?variant=following',
+  ],
 };
 
 // 绝不能拦的页面：拦了会让插件没法用
@@ -48,13 +53,20 @@ const NOT_HOMEPAGES = [
   'https://www.xiaohongshu.com/explore/64f1a2b3c4d5e6f7a8b9c0d1',
   'https://www.xiaohongshu.com/explore/64f1a2b3c4d5e6f7a8b9c0d1?xsec_token=abc',
   'https://www.xiaohongshu.com/search_result?keyword=a',
+  'https://www.instagram.com/explore/search/keyword/?q=a',
+  'https://www.instagram.com/direct/inbox/',
+  'https://www.instagram.com/p/C1a2B3c4D5e/',
+  'https://www.instagram.com/reel/C1a2B3c4D5e/',
+  'https://www.instagram.com/natgeo/',
+  'https://www.instagram.com/explore/',
+  'https://www.instagram.com/reels/',
   'https://example.com/',
   'https://notx.com/',
   'https://x.com.evil.com/',
 ];
 
-test('四个站点 id 唯一，SITES_BY_ID 一一对应', () => {
-  assert.deepEqual(SITES.map((s) => s.id), ['x', 'bilibili', 'zhihu', 'xiaohongshu']);
+test('站点 id 唯一，SITES_BY_ID 一一对应', () => {
+  assert.deepEqual(SITES.map((s) => s.id), ['x', 'bilibili', 'zhihu', 'xiaohongshu', 'instagram']);
   for (const site of SITES) assert.equal(SITES_BY_ID[site.id], site);
 });
 
@@ -100,6 +112,7 @@ test('searchUrlFor 去掉首尾空白并编码', () => {
   assert.equal(searchUrlFor(SITES_BY_ID.x, 'claude'), 'https://x.com/search?q=claude');
   assert.equal(searchUrlFor(SITES_BY_ID.zhihu, 'claude'), 'https://www.zhihu.com/search?type=content&q=claude');
   assert.equal(searchUrlFor(SITES_BY_ID.xiaohongshu, 'claude'), 'https://www.xiaohongshu.com/search_result?keyword=claude');
+  assert.equal(searchUrlFor(SITES_BY_ID.instagram, 'claude'), 'https://www.instagram.com/explore/search/keyword/?q=claude');
 });
 
 test('searchUrlFor 对空输入返回 null', () => {

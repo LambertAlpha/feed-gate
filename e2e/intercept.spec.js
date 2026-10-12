@@ -6,6 +6,7 @@ const HOMES = [
   { id: 'bilibili', url: 'https://www.bilibili.com/' },
   { id: 'zhihu', url: 'https://www.zhihu.com/' },
   { id: 'xiaohongshu', url: 'https://www.xiaohongshu.com/explore' },
+  { id: 'instagram', url: 'https://www.instagram.com/' },
 ];
 
 for (const { id, url } of HOMES) {
@@ -20,6 +21,7 @@ const SPA = [
   { id: 'bilibili', from: 'https://www.bilibili.com/video/BV1GJ411x7h7', to: '/' },
   { id: 'zhihu', from: 'https://www.zhihu.com/question/19550225', to: '/' },
   { id: 'xiaohongshu', from: 'https://www.xiaohongshu.com/search_result?keyword=a', to: '/explore' },
+  { id: 'instagram', from: 'https://www.instagram.com/direct/inbox/', to: '/' },
 ];
 
 for (const { id, from, to } of SPA) {
@@ -77,6 +79,7 @@ const NOT_GATED = [
   'https://www.xiaohongshu.com/explore/64f1a2b3c4d5e6f7a8b9c0d1',
   'https://www.bilibili.com/video/BV1GJ411x7h7',
   'https://x.com/search?q=claude',
+  'https://www.instagram.com/p/C1a2B3c4D5e/',
 ];
 
 for (const url of NOT_GATED) {

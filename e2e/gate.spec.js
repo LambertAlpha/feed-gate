@@ -7,6 +7,7 @@ const SITES = [
   { id: 'bilibili', name: 'Bilibili', home: 'https://www.bilibili.com/', searchPrefix: 'https://search.bilibili.com/all?keyword=' },
   { id: 'zhihu', name: 'Zhihu', home: 'https://www.zhihu.com/', searchPrefix: 'https://www.zhihu.com/search?type=content&q=' },
   { id: 'xiaohongshu', name: 'Xiaohongshu', home: 'https://www.xiaohongshu.com/explore', searchPrefix: 'https://www.xiaohongshu.com/search_result?keyword=' },
+  { id: 'instagram', name: 'Instagram', home: 'https://www.instagram.com/', searchPrefix: 'https://www.instagram.com/explore/search/keyword/?q=' },
 ];
 
 for (const { id, name, home, searchPrefix } of SITES) {

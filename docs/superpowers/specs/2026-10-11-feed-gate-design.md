@@ -1,5 +1,7 @@
 # Feed Gate 设计文档
 
+> 2026-10-11 追加：界面改为英文；新增 Instagram（第五个站）。
+
 日期：2026-10-11
 
 ## 问题
@@ -8,14 +10,14 @@
 
 ## 目标
 
-- 打开四个站的首页时，不显示推荐流，而是显示一个「你来干什么？」闸门页
+- 打开各站首页时，不显示推荐流，而是显示一个「你来干什么？」闸门页
 - 有明确目的时成本接近零：在闸门里输入的关键词，本来就要在站内搜索框里输
 - 漫无目的地打开时，没有任何办法进入推荐流（不留后门）
 
 ## 非目标
 
 - 暂停开关、popup、设置页、图标美化
-- 非首页的推荐位：B站视频页右侧推荐和自动连播、知乎回答页底部推荐、推特 Trends、B站 `/v/popular`、知乎 `/hot`、推特 `/explore`
+- 非首页的推荐位：B站视频页右侧推荐和自动连播、知乎回答页底部推荐、推特 Trends、B站 `/v/popular`、知乎 `/hot`、推特 `/explore`、Instagram `/explore/` 和 `/reels/`
 - Safari、Firefox；只支持 Chrome 系（Chrome / Arc / Edge / Brave）
 - 手机 App
 
@@ -53,6 +55,7 @@
 | `bilibili` | Bilibili | `www.bilibili.com/`（含查询参数，如 `/?spm_id_from=…`） | `https://search.bilibili.com/all?keyword={q}` |
 | `zhihu` | Zhihu | `www.zhihu.com/` | `https://www.zhihu.com/search?type=content&q={q}` |
 | `xiaohongshu` | Xiaohongshu | `www.xiaohongshu.com/`、`/explore`、`/explore?channel_id=…` | `https://www.xiaohongshu.com/search_result?keyword={q}` |
+| `instagram` | Instagram | `www.instagram.com/`（含 `/?variant=following`） | `https://www.instagram.com/explore/search/keyword/?q={q}` |
 
 裸域（无 `www`）同样拦截。`{q}` 用 `encodeURIComponent` 编码。
 
@@ -66,13 +69,14 @@
 - B站：消息 `message.bilibili.com`、稍后再看、历史记录
 - 知乎：通知 `/notifications`、私信 `/messages`、收藏
 - 小红书：通知 `/notification`
+- Instagram：Messages `/direct/inbox/`、Notifications `/notifications/`（未登录时跳登录页并保留路径；对照组：不存在的路由返回 404、不存在的用户名显示 Profile isn't available）
 
 ## 架构
 
 ```
 feed-gate/
 ├── extension/          ← Chrome「加载已解压的扩展程序」选这个目录
-│   ├── manifest.json   MV3；权限 declarativeNetRequest、webNavigation、scripting、storage；只申请四站 host 权限
+│   ├── manifest.json   MV3；权限 declarativeNetRequest、webNavigation、scripting、storage；只申请各站 host 权限
 │   ├── sites.js        唯一配置源：id、站名、域名、首页正则、搜索前缀、快捷入口
 │   ├── rules.js        由 sites.js 生成 DNR 规则（纯函数）
 │   ├── stats.js        每日计数（纯函数）
@@ -97,7 +101,7 @@ feed-gate/
 | 站内点 Logo /「发现」（SPA `pushState`，不发请求） | `webNavigation.onHistoryStateUpdated` → `scripting.executeScript` 在页面里执行 `location.replace(闸门)` | 推荐流可能闪现零点几秒 |
 | DNR 看不到的整页导航：站点自己的 Service Worker 直接应答（推特是 PWA）、DNR 规则缺失；bfcache 恢复出的首页 | `webNavigation.onCommitted` → 同上 | 首页先提交再被替换，会闪一下 |
 
-两个 webNavigation 监听只处理 `frameId === 0`（主框架），并用 `hostEquals` 过滤器限定在四站域名，避免其他网站的每次跳转都唤醒 service worker。`executeScript` 失败时退回 `chrome.tabs.update`。
+两个 webNavigation 监听只处理 `frameId === 0`（主框架），并用 `hostEquals` 过滤器限定在各站域名，避免其他网站的每次跳转都唤醒 service worker。`executeScript` 失败时退回 `chrome.tabs.update`。
 
 **第三层不是可有可无的兜底**：站点 Service Worker 应答的导航不经过网络层，DNR 完全看不到。代码审查时用模拟的 x.com Service Worker 验证过：地址栏输入、站内链接、跨站链接、脚本跳转四种方式进 `/home`，全部由 `onCommitted` 拦下。推特在真实 Chrome 里是否走这条路径，见手动检查清单。
 
@@ -111,9 +115,9 @@ DNR 规则在 `runtime.onInstalled` 和 `runtime.onStartup` 时重建：先删�
 
 ### Manifest 约束（来自 Chrome 文档）
 
-- DNR 重定向到扩展内页面时，目标必须在 `web_accessible_resources` 中声明。`matches` 用 `<all_urls>` 而不是四站域名：从 Google 搜索结果等其他网站点链接进首页时，请求的发起方是那个网站，只写四站会导致重定向被拒（`ERR_BLOCKED_BY_CLIENT`）
-- 重定向规则需要对应站点的 host 权限，因此 `host_permissions` 列出四站（含裸域）
-- 在页面里执行 `location.replace` 需要 `scripting` 权限；四站 host 权限已有，安装提示不变。网页能跳转到 `gate.html`，同样依赖它在 `web_accessible_resources` 里
+- DNR 重定向到扩展内页面时，目标必须在 `web_accessible_resources` 中声明。`matches` 用 `<all_urls>` 而不是各站域名：从 Google 搜索结果等其他网站点链接进首页时，请求的发起方是那个网站，只写各站域名会导致重定向被拒（`ERR_BLOCKED_BY_CLIENT`）
+- 重定向规则需要对应站点的 host 权限，因此 `host_permissions` 列出各站（含裸域）
+- 在页面里执行 `location.replace` 需要 `scripting` 权限；各站 host 权限已有，安装提示不变。网页能跳转到 `gate.html`，同样依赖它在 `web_accessible_resources` 里
 - 兜底用的 `chrome.tabs.update` 不需要 `tabs` 权限
 
 ### 数据
@@ -135,7 +139,7 @@ DNR 规则在 `runtime.onInstalled` 和 `runtime.onStartup` 时重建：先删�
 
 1. **单元测试**（`node --test`，零依赖）：URL 表驱动，覆盖每站的正例和反例，重点是上面的「关键边界」；另测搜索 URL 编码（中文、空格、`&`）和日期翻转后计数清零的纯函数
 2. **端到端**（Playwright 自带的 Chromium，`--load-extension` 加载）。非首页的站点页面和搜索结果页都用 `context.route` 返回本地桩页面；浏览器用 `--host-resolver-rules` 强制离线，否则 DNR 失效时真实首页加载后会被 `onCommitted` 兜底拦下，测试照过、掩盖问题：
-   - 四站各一次：打开首页 URL → 落到 `gate.html` → 输入关键词回车 → URL 变为搜索页 → 按后退不回闸门
+   - 每站各一次：打开首页 URL → 落到 `gate.html` → 输入关键词回车 → URL 变为搜索页 → 按后退不回闸门
    - SPA 兜底：先打开某站非首页页面，`page.evaluate(() => history.pushState({}, '', '/'))`（推特用 `/home`，小红书用 `/explore`），断言跳到闸门
    - 后退（SPA 路径）：被拦后按一次后退回到进首页之前的页面，前进回到闸门；开启 bfcache，和真实 Chrome 一致（Playwright 默认关）
    - `onCommitted` 路径：删掉全部 DNR 规则后打开首页，断言跳到闸门，再按后退回到上一个页面

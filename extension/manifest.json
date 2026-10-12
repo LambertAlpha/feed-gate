@@ -2,14 +2,15 @@
   "manifest_version": 3,
   "name": "Feed Gate",
   "version": "0.1.0",
-  "description": "Puts an intent gate in front of the X, Bilibili, Zhihu and Xiaohongshu home feeds.",
+  "description": "Puts an intent gate in front of the X, Bilibili, Zhihu, Xiaohongshu and Instagram home feeds.",
   "permissions": ["declarativeNetRequest", "webNavigation", "storage", "scripting"],
   "host_permissions": [
     "https://*.x.com/*",
     "https://*.twitter.com/*",
     "https://*.bilibili.com/*",
     "https://*.zhihu.com/*",
-    "https://*.xiaohongshu.com/*"
+    "https://*.xiaohongshu.com/*",
+    "https://*.instagram.com/*"
   ],
   "background": { "service_worker": "background.js", "type": "module" },
   "web_accessible_resources": [
