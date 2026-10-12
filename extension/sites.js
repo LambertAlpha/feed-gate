@@ -4,48 +4,48 @@
 export const SITES = [
   {
     id: 'x',
-    name: '推特',
+    name: 'X',
     hosts: ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'],
     homepage: String.raw`^https://(www\.)?(x|twitter)\.com/(home/?)?([?#].*)?$`,
     searchPrefix: 'https://x.com/search?q=',
     links: [
-      { label: '通知', url: 'https://x.com/notifications' },
-      { label: '私信', url: 'https://x.com/i/chat' },
-      { label: '书签', url: 'https://x.com/i/bookmarks' },
+      { label: 'Notifications', url: 'https://x.com/notifications' },
+      { label: 'Chat', url: 'https://x.com/i/chat' },
+      { label: 'Bookmarks', url: 'https://x.com/i/bookmarks' },
     ],
   },
   {
     id: 'bilibili',
-    name: 'B站',
+    name: 'Bilibili',
     hosts: ['www.bilibili.com', 'bilibili.com'],
     homepage: String.raw`^https://(www\.)?bilibili\.com/([?#].*)?$`,
     searchPrefix: 'https://search.bilibili.com/all?keyword=',
     links: [
-      { label: '消息', url: 'https://message.bilibili.com/' },
-      { label: '稍后再看', url: 'https://www.bilibili.com/watchlater/list' },
-      { label: '历史记录', url: 'https://www.bilibili.com/history' },
+      { label: 'Messages', url: 'https://message.bilibili.com/' },
+      { label: 'Watch Later', url: 'https://www.bilibili.com/watchlater/list' },
+      { label: 'History', url: 'https://www.bilibili.com/history' },
     ],
   },
   {
     id: 'zhihu',
-    name: '知乎',
+    name: 'Zhihu',
     hosts: ['www.zhihu.com', 'zhihu.com'],
     homepage: String.raw`^https://(www\.)?zhihu\.com/([?#].*)?$`,
     searchPrefix: 'https://www.zhihu.com/search?type=content&q=',
     links: [
-      { label: '通知', url: 'https://www.zhihu.com/notifications' },
-      { label: '私信', url: 'https://www.zhihu.com/messages' },
+      { label: 'Notifications', url: 'https://www.zhihu.com/notifications' },
+      { label: 'Messages', url: 'https://www.zhihu.com/messages' },
     ],
   },
   {
     id: 'xiaohongshu',
-    name: '小红书',
+    name: 'Xiaohongshu',
     hosts: ['www.xiaohongshu.com', 'xiaohongshu.com'],
     // /explore 是发现页（推荐流），/explore/<笔记ID> 是笔记详情，后者不能拦
     homepage: String.raw`^https://(www\.)?xiaohongshu\.com/(explore/?)?([?#].*)?$`,
     searchPrefix: 'https://www.xiaohongshu.com/search_result?keyword=',
     links: [
-      { label: '通知', url: 'https://www.xiaohongshu.com/notification' },
+      { label: 'Notifications', url: 'https://www.xiaohongshu.com/notification' },
     ],
   },
 ];

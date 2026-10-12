@@ -16,15 +16,15 @@ if (site) {
   // 统计失败不影响拦截，只是不显示次数
   showStats(site).catch(() => {});
 } else {
-  titleEl.textContent = '你来这里干什么？';
+  titleEl.textContent = 'What did you come here for?';
   formEl.hidden = true;
 }
 
 function showGate(site) {
-  const question = `你来${site.name}干什么？`;
+  const question = `What did you come to ${site.name} for?`;
   document.title = question;
   titleEl.textContent = question;
-  inputEl.placeholder = `搜索${site.name}`;
+  inputEl.placeholder = `Search ${site.name}`;
   for (const { label, url } of site.links) {
     const a = document.createElement('a');
     a.href = url;
@@ -57,5 +57,6 @@ async function showStats(site) {
   // 只显示今天确有记录的次数；没有（如隔天刷新昨天的闸门）就留空，不编造
   const count = current?.date === today ? current.counts[site.id] : undefined;
   if (!count) return;
-  statsEl.textContent = `今天第 ${count} 次打开${site.name}首页 · 各站合计 ${totalCount(current)} 次`;
+  const times = count === 1 ? '1 time' : `${count} times`;
+  statsEl.textContent = `Opened the ${site.name} homepage ${times} today · ${totalCount(current)} across all sites`;
 }

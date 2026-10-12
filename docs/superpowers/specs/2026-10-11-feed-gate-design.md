@@ -36,11 +36,12 @@
 
 ### 闸门页
 
-- 标题：「你来 {站名} 干什么？」，输入框自动聚焦
+- 界面文案为英文（2026-10-11 由中文改为英文）
+- 标题：`What did you come to {站名} for?`，输入框自动聚焦，占位符 `Search {站名}`
 - 输入关键词 + 回车 → `location.replace()` 跳到该站搜索结果页（用 replace，按后退不会回到闸门）
 - 输入为空或只有空白时回车：不跳转
 - 输入框下方：该站功能页快捷入口（2–4 个）
-- 角落：「今天第 N 次打开 {站名} 首页 · 各站合计 M 次」；按本地日期，次日清零
+- 角落：`Opened the {站名} homepage N time(s) today · M across all sites`；按本地日期，次日清零
 - 每次被拦进闸门计数 +1；刷新闸门、前进后退回到闸门不计（按 `performance` 导航类型 `reload` / `back_forward` 判断），只显示当前计数
 - 多个闸门标签同时打开（会话恢复、批量打开书签）时读写有竞态，可能少记几次。不处理：只会少记，不影响拦截
 
@@ -48,10 +49,10 @@
 
 | 站点 id | 站名 | 拦截的首页 | 搜索跳转 |
 |---|---|---|---|
-| `x` | 推特 | `x.com/`、`x.com/home`（含 `twitter.com` 同路径） | `https://x.com/search?q={q}` |
-| `bilibili` | B站 | `www.bilibili.com/`（含查询参数，如 `/?spm_id_from=…`） | `https://search.bilibili.com/all?keyword={q}` |
-| `zhihu` | 知乎 | `www.zhihu.com/` | `https://www.zhihu.com/search?type=content&q={q}` |
-| `xiaohongshu` | 小红书 | `www.xiaohongshu.com/`、`/explore`、`/explore?channel_id=…` | `https://www.xiaohongshu.com/search_result?keyword={q}` |
+| `x` | X | `x.com/`、`x.com/home`（含 `twitter.com` 同路径） | `https://x.com/search?q={q}` |
+| `bilibili` | Bilibili | `www.bilibili.com/`（含查询参数，如 `/?spm_id_from=…`） | `https://search.bilibili.com/all?keyword={q}` |
+| `zhihu` | Zhihu | `www.zhihu.com/` | `https://www.zhihu.com/search?type=content&q={q}` |
+| `xiaohongshu` | Xiaohongshu | `www.xiaohongshu.com/`、`/explore`、`/explore?channel_id=…` | `https://www.xiaohongshu.com/search_result?keyword={q}` |
 
 裸域（无 `www`）同样拦截。`{q}` 用 `encodeURIComponent` 编码。
 
@@ -127,7 +128,7 @@ DNR 规则在 `runtime.onInstalled` 和 `runtime.onStartup` 时重建：先删�
 
 ## 错误处理
 
-- `gate.html` 收到未知或缺失的 `site` 参数（包括 `constructor` 这类原型链上的名字，用 `Object.hasOwn` 判断）：显示通用标题「你来这里干什么？」，不显示搜索和快捷入口，计数不变
+- `gate.html` 收到未知或缺失的 `site` 参数（包括 `constructor` 这类原型链上的名字，用 `Object.hasOwn` 判断）：显示通用标题 `What did you come here for?`，不显示搜索和快捷入口，计数不变
 - `chrome.storage` 读写失败：闸门照常工作，只是不显示计数（不能因为统计挂掉而放行）
 
 ## 测试
